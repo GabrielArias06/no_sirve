@@ -5,6 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: emily06/proyecto1:cic
+    image: emily06/proyecto1:ci
     container_name: proyecto-test
     tty: true

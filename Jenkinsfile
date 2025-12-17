@@ -2,63 +2,70 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USER = "emily06"
-        IMAGE_NAME = "proyecto1"
-        IMAGE_TAG  = "ci"
+        // 1. Nombre de la imagen
+        DOCKER_USER = 'emily06'
+        IMAGE_NAME = 'proyecto1'
+        IMAGE_TAG = 'ci'
         FULL_IMAGE = "${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+        // 2. ID de las credenciales configuradas en Jenkins (las crearás después)
+        DOCKERHUB_CREDS = credentials('docker-hub-creds')
     }
 
     stages {
-
-        stage('CI #1 - Build imagen con Docker Compose') {
+        stage('CI #1 - Build con Docker Compose') {
             steps {
-                echo "Construyendo imagen Docker con docker-compose"
-                bat 'docker compose build'
+                echo "Construyendo imagen: ${env.FULL_IMAGE}"
+                // Construye la imagen usando el docker-compose.yml
+                bat "docker-compose build"
+            }
+        }
+
+        stage('CI #1 - Login a Docker Hub') {
+            steps {
+                echo "Autenticando en Docker Hub..."
+                // Login usando las credenciales almacenadas
+                bat "echo ${env.DOCKERHUB_CREDS_PSW} | docker login -u ${env.DOCKERHUB_CREDS_USR} --password-stdin"
             }
         }
 
         stage('CI #1 - Push a Docker Hub') {
             steps {
-                echo "Publicando imagen ${FULL_IMAGE}"
-                bat 'docker push %FULL_IMAGE%'
-            }
-        }
-
-        stage('CI #2 - Pull de imagen') {
-            steps {
-                echo "Descargando imagen desde Docker Hub"
-                bat 'docker pull %FULL_IMAGE%'
+                echo "Publicando imagen: ${env.FULL_IMAGE}"
+                bat "docker push ${env.FULL_IMAGE}"
             }
         }
 
         stage('CI #2 - Verificación de imagen') {
             steps {
-                echo "Imagen usada: %FULL_IMAGE%"
-                bat 'docker images %FULL_IMAGE%'
+                echo "Verificando imagen en Docker Hub..."
+                // Esto realmente hace pull desde el registro remoto
+                bat "docker pull ${env.FULL_IMAGE}"
+                bat "docker images ${env.FULL_IMAGE}"
             }
         }
 
         stage('CI #2 - Ejecución de comandos') {
             steps {
-                echo "Ejecutando comandos de revisión"
-                bat '''
-                docker run --rm %FULL_IMAGE% cmd /c ^
-                "rpm --version && ^
-                 ruby --version && ^
-                 node --version && ^
-                 yarn --version && ^
-                 python --version"
-                '''
+                echo "Ejecutando comandos de revisión en el contenedor..."
+                // Ejecuta comandos dentro de la imagen descargada
+                bat """
+                docker run --rm ${env.FULL_IMAGE} /bin/bash -lc \
+                \"rpm --version && \
+                 ruby --version && \
+                 node --version && \
+                 yarn --version && \
+                 python --version\"
+                """
             }
         }
     }
 
     post {
         success {
-            echo "Pipeline ejecutado correctamente."
+            echo "✅ Pipeline ejecutado correctamente. Imagen ${env.FULL_IMAGE} publicada."
         }
         failure {
-            echo "Error en el pipeline."
+            echo "❌ Error en el pipeline."
         }
     }
 }

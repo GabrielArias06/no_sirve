@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  proyecto:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: emii160/proyecto1:latest
+    container_name: proyecto-test
+    tty: true

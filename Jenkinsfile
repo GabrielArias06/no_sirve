@@ -7,8 +7,7 @@ pipeline {
         IMAGE_NAME = 'proyecto1'
         IMAGE_TAG = 'ci'
         FULL_IMAGE = "${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
-        // 2. ID de las credenciales configuradas en Jenkins (las crearás después)
-        DOCKERHUB_CREDS = credentials('docker-hub-creds')
+        DOCKERHUB_CREDS = credentials('dockerhub')
     }
 
     stages {
